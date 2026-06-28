@@ -1,6 +1,6 @@
 import { streamText, stepCountIs } from "ai";
 import { google } from "@ai-sdk/google";
-import { getMockKaprukaTools } from "@/lib/mock-tools";
+import { getKaprukaTools } from "@/lib/mcp-client";
 import { getSystemPrompt } from "@/lib/system-prompt";
 
 export const maxDuration = 60;
@@ -35,8 +35,8 @@ export async function POST(req: Request) {
       cartSummary = `${cart.length} item(s) in cart:\n${items}\nCart Total: Rs. ${total.toLocaleString("en-LK")}`;
     }
 
-    // Get tools from our local mock tools
-    const kaprukaTools = getMockKaprukaTools();
+    // Get tools from MCP client
+    const kaprukaTools = await getKaprukaTools();
 
     const result = streamText({
       model: google("gemini-2.5-flash"),
