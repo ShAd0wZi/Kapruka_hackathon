@@ -1,6 +1,6 @@
 import { streamText, stepCountIs } from "ai";
 import { google } from "@ai-sdk/google";
-import { getMockKaprukaTools } from "@/lib/mock-tools";
+import { getKaprukaTools } from "@/lib/mcp-client";
 import { getSystemPrompt } from "@/lib/system-prompt";
 
 export const maxDuration = 60;
@@ -36,7 +36,7 @@ export async function POST(req: Request) {
     }
 
     // Get tools from our local mock tools
-    const kaprukaTools = getMockKaprukaTools();
+    const kaprukaTools = await getKaprukaTools();
 
     const result = streamText({
       model: google("gemini-2.5-flash"),

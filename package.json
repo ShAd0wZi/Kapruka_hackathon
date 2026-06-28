@@ -14,6 +14,7 @@
     "@ai-sdk/react": "^2.0.208",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "ai": "^5.0.206",
+    "eventsource": "^4.1.0",
     "framer-motion": "^12.42.0",
     "lucide-react": "^0.500.0",
     "next": "^15.5.19",

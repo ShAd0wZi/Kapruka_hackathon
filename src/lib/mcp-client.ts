@@ -6,7 +6,7 @@ let connectionPromise: Promise<Awaited<ReturnType<typeof experimental_createMCPC
 async function connectMCP() {
   const client = await experimental_createMCPClient({
     transport: {
-      type: "sse",
+      type: "http",
       url: "https://mcp.kapruka.com/mcp",
     },
   });
