@@ -7,7 +7,28 @@ export const maxDuration = 60;
 
 export async function POST(req: Request) {
   try {
-    const { messages, cart } = await req.json();
+    let { messages, cart } = await req.json();
+
+    // Input Sanitization and Context Window Management
+    if (!Array.isArray(messages)) {
+      messages = [];
+    }
+
+    // Keep only the last 20 messages to prevent context explosion
+    if (messages.length > 20) {
+      messages = messages.slice(-20);
+    }
+
+    // Sanitize the latest user message to prevent massive text inputs
+    if (messages.length > 0) {
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage.role === 'user' && typeof lastMessage.content === 'string') {
+        const MAX_LENGTH = 2000;
+        if (lastMessage.content.length > MAX_LENGTH) {
+          lastMessage.content = lastMessage.content.substring(0, MAX_LENGTH) + "\n\n[SYSTEM NOTE: User message was truncated due to length limits.]";
+        }
+      }
+    }
 
     if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY === 'your_key_here') {
       return new Response(
@@ -36,11 +57,32 @@ export async function POST(req: Request) {
     }
 
 
-    const kaprukaTools = await getKaprukaTools();
+    // Implement Timeout & Graceful Degradation for MCP Tools
+    const withTimeout = <T>(promise: Promise<T>, ms: number): Promise<T> => {
+      let timeoutId: NodeJS.Timeout;
+      const timeoutPromise = new Promise<T>((_, reject) => {
+        timeoutId = setTimeout(() => reject(new Error('MCP Tool Fetch Timeout')), ms);
+      });
+      return Promise.race([
+        promise,
+        timeoutPromise
+      ]).finally(() => clearTimeout(timeoutId));
+    };
+
+    let kaprukaTools = {};
+    let mcpErrorContext = "";
+    try {
+      kaprukaTools = await withTimeout(getKaprukaTools(), 5000);
+    } catch (error) {
+      console.error("Failed to fetch MCP tools. Running in degraded mode.", error);
+      mcpErrorContext = "\n\nCRITICAL SYSTEM NOTE: The Kapruka MCP Server is currently unreachable or timed out. You have NO tools available. You MUST inform the user that live searching, checking delivery, and creating orders are temporarily unavailable due to a connection issue, and answer questions generally if possible.";
+    }
+
+    const finalSystemPrompt = getSystemPrompt(cartSummary) + mcpErrorContext;
 
     const result = streamText({
       model: google("gemini-2.5-flash"),
-      system: getSystemPrompt(cartSummary),
+      system: finalSystemPrompt,
       messages,
       tools: kaprukaTools,
       stopWhen: stepCountIs(10),
