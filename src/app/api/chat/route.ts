@@ -35,7 +35,7 @@ export async function POST(req: Request) {
       cartSummary = `${cart.length} item(s) in cart:\n${items}\nCart Total: Rs. ${total.toLocaleString("en-LK")}`;
     }
 
-    // Get tools from MCP client
+
     const kaprukaTools = await getKaprukaTools();
 
     const result = streamText({
