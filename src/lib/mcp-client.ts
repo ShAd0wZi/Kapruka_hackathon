@@ -36,5 +36,7 @@ export async function getMCPClient() {
 
 export async function getKaprukaTools() {
   const client = await getMCPClient();
-  return await client.tools();
+  const tools = await client.tools();
+  // Type assertion to fix TypeScript compatibility issue with streamText
+  return tools as any;
 }
